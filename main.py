@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 if __name__ == '__main__':
@@ -14,7 +15,14 @@ if __name__ == '__main__':
     dev_X, dev_y = X[:, train_set_idx:dev_set_idx], y[:, train_set_idx:dev_set_idx]
     test_X, test_y = X[:, dev_set_idx:], y[:, dev_set_idx:]
 
-    print(f'train/dev/test partition: {train_X.shape[1]}:{dev_X.shape[1]}:{test_X.shape[1]}')
-
     df = pd.read_csv('test.csv').transpose()
     subm_X = df.to_numpy()
+
+    rng = np.random.default_rng(0)
+    subm_y = rng.integers(0, 9, (1, subm_X.shape[1]))
+
+    df = pd.DataFrame(subm_y.T)
+    df.index.name = 'ImageId'
+    df.columns = ['Label']
+    df.index += 1
+    df.to_csv('submission.csv')
