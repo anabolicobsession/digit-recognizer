@@ -1,6 +1,7 @@
 import math
 
 import numpy as np
+from constants import EPS
 
 
 def make_one_hot(x, n_classes):
@@ -25,7 +26,7 @@ class LogisticRegression:
         self.n_classes = n_classes
         self.rng = np.random.default_rng(0)
 
-    def fit(self, X, y, learning_rate, n_epochs, mini_batch_size=32, beta=0.9, print_epochs=True, print_every=10):
+    def fit(self, X, y, learning_rate, n_epochs, mini_batch_size=64, beta1=0.9, beta2=0.99, print_epochs=True, print_every=10):
         """
         Fit the model with given data.
 
@@ -34,7 +35,8 @@ class LogisticRegression:
         :param n_epochs: a number of epochs
         :param learning_rate: a parameter which determines a training speed
         :param mini_batch_size: a size of one mini batch of samples
-        :param beta: a parameter which controls momentum of weights
+        :param beta1: a parameter which controls momentum of weights
+        :param beta2: a parameter which controls normalization of weights
         :param print_epochs: defines whether to print statistics between epochs
         :param print_every: how often to print statistics
         """
@@ -45,6 +47,7 @@ class LogisticRegression:
 
         n_mini_batches = math.ceil(m / mini_batch_size)
         v_dW, v_db = 0, 0
+        s_dW, s_db = 0, 0
 
         for epoch in range(n_epochs):
             perm = self.rng.permutation(m)
@@ -63,11 +66,14 @@ class LogisticRegression:
                 dW = dZ @ X_mb.T
                 db = np.sum(dZ, axis=-1, keepdims=True)
 
-                v_dW = beta * v_dW + (1 - beta) * dW
-                v_db = beta * v_db + (1 - beta) * db
+                v_dW = beta1 * v_dW + (1 - beta1) * dW
+                v_db = beta1 * v_db + (1 - beta1) * db
 
-                self.W -= learning_rate * v_dW
-                self.b -= learning_rate * v_db
+                s_dW = beta2 * s_dW + (1 - beta2) * np.power(dW, 2)
+                s_db = beta2 * s_db + (1 - beta2) * np.power(db, 2)
+
+                self.W -= learning_rate * v_dW / (np.sqrt(s_dW) + EPS)
+                self.b -= learning_rate * v_db / (np.sqrt(s_db) + EPS)
 
             if print_epochs and epoch % print_every == 0:
                 print(f'epoch: {epoch:2d}, loss: {self.cross_entropy(X, Y):.2f}, acc: {self.accuracy(X, y):.2f}')
@@ -85,7 +91,7 @@ class LogisticRegression:
 
     def cross_entropy(self, X, Y):
         Z = self.W @ X + self.b
-        A = np.maximum(softmax(Z), 1e-300)
+        A = np.maximum(softmax(Z), EPS)
         ce = - np.sum(Y * np.log(A)) / X.shape[-1]
         return ce
 
