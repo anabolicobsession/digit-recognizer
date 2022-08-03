@@ -4,15 +4,19 @@ import pandas as pd
 from logistic_regression import LogisticRegression
 
 
-def accuracy(y: np.ndarray, pred: np.ndarray):
+def normalize(X):
+    return X / 255
+
+
+def accuracy(y, pred):
     return np.sum(y == pred) / y.shape[1]
 
 
 if __name__ == '__main__':
-    do_analysis = True
+    do_analysis = False
     print_test_accuracy = False
     learning_rate = 0.01
-    epochs = 600
+    epochs = 1200
 
     train_set_share = 0.8
     data_path = 'data/'
@@ -20,6 +24,7 @@ if __name__ == '__main__':
 
     df = pd.read_csv(data_path + 'train.csv').transpose()
     X = df.drop(index='label').to_numpy()
+    X = normalize(X)
     y = df.loc['label'].to_numpy().reshape(1, -1)
 
     model = LogisticRegression(n_classes=10)
@@ -42,6 +47,7 @@ if __name__ == '__main__':
     else:
         model.fit(X, y, learning_rate=learning_rate, epochs=epochs)
         subm_X = pd.read_csv(data_path + 'test.csv').transpose().to_numpy()
+        subm_X = normalize(subm_X)
         subm_y = model.predict(subm_X)
 
         df = pd.DataFrame(subm_y.T)
