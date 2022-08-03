@@ -25,7 +25,7 @@ class LogisticRegression:
         self.n_classes = n_classes
         self.rng = np.random.default_rng(0)
 
-    def fit(self, X, y, learning_rate, n_epochs, mini_batch_size=32, print_epochs=True, print_every=10):
+    def fit(self, X, y, learning_rate, n_epochs, mini_batch_size=32, beta=0.9, print_epochs=True, print_every=10):
         """
         Fit the model with given data.
 
@@ -34,6 +34,7 @@ class LogisticRegression:
         :param n_epochs: a number of epochs
         :param learning_rate: a parameter which determines a training speed
         :param mini_batch_size: a size of one mini batch of samples
+        :param beta: a parameter which controls momentum of weights
         :param print_epochs: defines whether to print statistics between epochs
         :param print_every: how often to print statistics
         """
@@ -41,7 +42,9 @@ class LogisticRegression:
         self.W = np.zeros((self.n_classes, n))
         self.b = np.zeros((self.n_classes, 1))
         Y = make_one_hot(y, self.n_classes)
+
         n_mini_batches = math.ceil(m / mini_batch_size)
+        v_dW, v_db = 0, 0
 
         for epoch in range(n_epochs):
             perm = self.rng.permutation(m)
@@ -60,8 +63,11 @@ class LogisticRegression:
                 dW = dZ @ X_mb.T
                 db = np.sum(dZ, axis=-1, keepdims=True)
 
-                self.W -= learning_rate * dW
-                self.b -= learning_rate * db
+                v_dW = beta * v_dW + (1 - beta) * dW
+                v_db = beta * v_db + (1 - beta) * db
+
+                self.W -= learning_rate * v_dW
+                self.b -= learning_rate * v_db
 
             if print_epochs and epoch % print_every == 0:
                 print(f'epoch: {epoch:2d}, loss: {self.cross_entropy(X, Y):.2f}, acc: {self.accuracy(X, y):.2f}')
