@@ -64,10 +64,7 @@ class LogisticRegression:
                 self.b -= learning_rate * db
 
             if print_epochs and epoch % print_every == 0:
-                acc = np.sum(self.predict(X) == y) / m
-                A = np.maximum(softmax(self.W @ X + self.b), 1e-300)
-                loss = - np.sum(Y * np.log(A)) / m
-                print(f'epoch: {epoch:4d}, acc: {acc:.2f}, loss: {loss:.2f}')
+                print(f'epoch: {epoch:2d}, loss: {self.cross_entropy(X, Y):.2f}, acc: {self.accuracy(X, y):.2f}')
 
     def predict(self, X):
         """
@@ -79,3 +76,12 @@ class LogisticRegression:
         Z = self.W @ X + self.b
         pred = np.argmax(Z, axis=0, keepdims=True)
         return pred
+
+    def cross_entropy(self, X, Y):
+        Z = self.W @ X + self.b
+        A = np.maximum(softmax(Z), 1e-300)
+        ce = - np.sum(Y * np.log(A)) / X.shape[-1]
+        return ce
+
+    def accuracy(self, X, y):
+        return np.sum(self.predict(X) == y) / X.shape[-1]
