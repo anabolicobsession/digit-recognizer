@@ -22,7 +22,7 @@ class LogisticRegression:
         self.b = None
         self.n_classes = n_classes
 
-    def fit(self, X, y, epochs, learning_rate, print_epochs=False, print_every=10):
+    def fit(self, X, y, epochs, learning_rate, print_epochs=True, print_every=100):
         """
         Fit the model with given data.
 
@@ -43,8 +43,8 @@ class LogisticRegression:
             A = softmax(Z)
 
             dZ = - Y * (1 - A) / m
-            dW = (dZ @ X.T) / m
-            db = np.average(dZ, axis=-1).reshape(-1, 1)
+            dW = dZ @ X.T
+            db = np.sum(dZ, axis=-1, keepdims=True)
 
             self.W -= learning_rate * dW
             self.b -= learning_rate * db
@@ -52,7 +52,7 @@ class LogisticRegression:
             if print_epochs and i % print_every == 0:
                 acc = np.sum(y == np.argmax(Z, axis=0, keepdims=True)) / m
                 loss = - np.sum(Y * np.log(A)) / m
-                print(f'epoch: {i:4d}, acc: {acc:.3f}, loss: {loss:.3f}')
+                print(f'epoch: {i:4d}, acc: {acc:.2f}, loss: {loss:.2f}')
 
     def predict(self, X):
         """
