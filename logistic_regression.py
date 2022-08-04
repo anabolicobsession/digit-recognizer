@@ -20,10 +20,11 @@ def softmax(Z):
 
 
 class LogisticRegression:
-    def __init__(self, n_classes):
+    def __init__(self, n_classes, metric):
         self.W = None
         self.b = None
         self.n_classes = n_classes
+        self.metric = metric
         self.rng = np.random.default_rng(0)
 
     def fit(self, X, y, learning_rate, n_epochs, mini_batch_size=64, beta1=0.9, beta2=0.99, print_epochs=True, print_every=10):
@@ -76,7 +77,9 @@ class LogisticRegression:
                 self.b -= learning_rate * v_db / (np.sqrt(s_db) + EPS)
 
             if print_epochs and epoch % print_every == 0:
-                print(f'epoch: {epoch:2d}, loss: {self.cross_entropy(X, Y):.2f}, acc: {self.accuracy(X, y):.2f}')
+                print(f'epoch: {epoch:2d}, '
+                      f'loss: {self.cross_entropy(X, Y):.2f}, '
+                      f'acc: {self.metric(self.predict(X), y):.2f}')
 
     def predict(self, X):
         """
@@ -94,6 +97,3 @@ class LogisticRegression:
         A = np.maximum(softmax(Z), EPS)
         ce = - np.sum(Y * np.log(A)) / X.shape[-1]
         return ce
-
-    def accuracy(self, X, y):
-        return np.sum(self.predict(X) == y) / X.shape[-1]
