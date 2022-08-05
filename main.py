@@ -3,14 +3,16 @@ import pandas as pd
 
 from logistic_regression import LogisticRegression
 from kmeans import KMeans
+from knn import KNN
 from metrics import accuracy
 
 
 if __name__ == '__main__':
     # model = LogisticRegression(n_classes=10, metric=accuracy)
-    model = KMeans(K=10, metric=accuracy)
+    # model = KMeans(K=10, metric=accuracy)
+    model = KNN(K=5, metric=accuracy)
 
-    do_analysis = True
+    do_analysis = False
     print_test_accuracy = False
     learning_rate = 0.001
     n_epochs = 10
@@ -40,6 +42,8 @@ if __name__ == '__main__':
             model.fit(train_X, train_y, learning_rate=learning_rate, n_epochs=n_epochs)
         elif type(model) is KMeans:
             model.fit(train_X, n_epochs, y=train_y, supervised_learning=True)
+        elif type(model) is KNN:
+            model.fit(train_X, train_y)
 
         print(f'train acc: {accuracy(model.predict(train_X), train_y):.2f}')
         print(f'dev   acc: {accuracy(model.predict(dev_X), dev_y):.2f}')
@@ -49,6 +53,8 @@ if __name__ == '__main__':
             model.fit(X, y, learning_rate=learning_rate, n_epochs=n_epochs)
         elif type(model) is KMeans:
             model.fit(X, n_epochs, y=y, supervised_learning=True)
+        elif type(model) is KNN:
+            model.fit(X, y)
 
         subm_y = model.predict(subm_X)
 
