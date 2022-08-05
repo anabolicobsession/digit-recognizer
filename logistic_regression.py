@@ -2,15 +2,7 @@ import math
 
 import numpy as np
 from constants import EPS
-
-
-def make_one_hot(x, n_classes):
-    def to_one_hot(n):
-        oh = np.zeros(n_classes)
-        oh[n] = 1
-        return oh
-
-    return np.array(list(map(to_one_hot, list(np.squeeze(x))))).T
+from utils import make_one_hot
 
 
 def softmax(Z):
@@ -31,8 +23,8 @@ class LogisticRegression:
         """
         Fit the model with given data.
 
-        :param X: a ndarray with the shape (n, m), where n is the number of features and m is the number of samples
-        :param y: a ndarray with the shape (1, m)
+        :param X: an ndarray with the shape (n, m), where n is the number of features and m is the number of samples
+        :param y: an ndarray with the shape (1, m)
         :param n_epochs: a number of epochs
         :param learning_rate: a parameter which determines a training speed
         :param mini_batch_size: a size of one mini batch of samples
@@ -85,8 +77,8 @@ class LogisticRegression:
         """
         Predicts a class using previously trained parameters.
         
-        :param X: a ndarray with the shape (n, m), where n is the number of features and m is the number of samples
-        :return: a ndarray with the shape (1, m)
+        :param X: an ndarray with the shape (n, m), where n is the number of features and m is the number of samples
+        :return: an ndarray with the shape (1, m)
         """
         Z = self.W @ X + self.b
         pred = np.argmax(Z, axis=0, keepdims=True)
