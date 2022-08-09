@@ -1,5 +1,5 @@
 import numpy as np
 
 
-def accuracy(pred, y):
-    return np.sum(pred == y) / y.shape[-1]
+def accuracy(y, pred):
+    return np.sum(pred == y) / len(y)

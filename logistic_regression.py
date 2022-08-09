@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 from constants import EPS
-from utils import make_one_hot
+from preprocessing import make_one_hot
 
 
 def softmax(Z):
@@ -12,42 +12,48 @@ def softmax(Z):
 
 
 class LogisticRegression:
-    def __init__(self, n_classes, metric):
+    def __init__(
+            self,
+            n_classes,
+            learning_rate,
+            n_epochs,
+            mini_batch_size=32,
+            beta1=0.9,
+            beta2=0.999,
+            verbose=False,
+            metric=None
+    ):
         self.W = None
         self.b = None
-        self.n_classes = n_classes
-        self.metric = metric
         self.rng = np.random.default_rng(0)
 
-    def fit(self, X, y, learning_rate, n_epochs, mini_batch_size=64, beta1=0.9, beta2=0.99, print_epochs=True, print_every=10):
-        """
-        Fit the model with given data.
+        self.n_classes = n_classes
+        self.learning_rate = learning_rate
+        self.n_epochs = n_epochs
+        self.mini_batch_size = mini_batch_size
+        self.beta1 = beta1
+        self.beta2 = beta2
 
-        :param X: an ndarray with the shape (n, m), where n is the number of features and m is the number of samples
-        :param y: an ndarray with the shape (1, m)
-        :param n_epochs: a number of epochs
-        :param learning_rate: a parameter which determines a training speed
-        :param mini_batch_size: a size of one mini batch of samples
-        :param beta1: a parameter which controls momentum of weights
-        :param beta2: a parameter which controls normalization of weights
-        :param print_epochs: defines whether to print statistics between epochs
-        :param print_every: how often to print statistics
-        """
+        self.verbose = verbose
+        self.metric = metric
+
+    def fit(self, X, y):
         n, m = X.shape
         self.W = np.zeros((self.n_classes, n))
         self.b = np.zeros((self.n_classes, 1))
-        Y = make_one_hot(y, self.n_classes)
+        Y = make_one_hot(y)
+        assert Y.shape[0] == self.n_classes, "Not all classes are represented in the training set"
 
-        n_mini_batches = math.ceil(m / mini_batch_size)
+        n_mini_batches = math.ceil(m / self.mini_batch_size)
         v_dW, v_db = 0, 0
         s_dW, s_db = 0, 0
 
-        for epoch in range(n_epochs):
+        for epoch in range(self.n_epochs):
             perm = self.rng.permutation(m)
             X_shuffled, Y_shuffled = X[:, perm], Y[:, perm]
 
             for mini_batch in range(n_mini_batches):
-                start = mini_batch * mini_batch_size
+                start = mini_batch * self.mini_batch_size
                 end = min(start + mini_batch, m)
                 X_mb = X_shuffled[:, start:end]
                 Y_mb = Y_shuffled[:, start:end]
@@ -55,37 +61,31 @@ class LogisticRegression:
                 Z = self.W @ X_mb + self.b
                 A = softmax(Z)
 
-                dZ = - Y_mb * (1 - A) / mini_batch_size
+                dZ = - Y_mb * (1 - A) / self.mini_batch_size
                 dW = dZ @ X_mb.T
                 db = np.sum(dZ, axis=-1, keepdims=True)
 
-                v_dW = beta1 * v_dW + (1 - beta1) * dW
-                v_db = beta1 * v_db + (1 - beta1) * db
+                v_dW = self.beta1 * v_dW + (1 - self.beta1) * dW
+                v_db = self.beta1 * v_db + (1 - self.beta1) * db
 
-                s_dW = beta2 * s_dW + (1 - beta2) * np.power(dW, 2)
-                s_db = beta2 * s_db + (1 - beta2) * np.power(db, 2)
+                s_dW = self.beta2 * s_dW + (1 - self.beta2) * np.power(dW, 2)
+                s_db = self.beta2 * s_db + (1 - self.beta2) * np.power(db, 2)
 
-                self.W -= learning_rate * v_dW / (np.sqrt(s_dW) + EPS)
-                self.b -= learning_rate * v_db / (np.sqrt(s_db) + EPS)
+                self.W -= self.learning_rate * v_dW / (np.sqrt(s_dW) + EPS)
+                self.b -= self.learning_rate * v_db / (np.sqrt(s_db) + EPS)
 
-            if print_epochs and epoch % print_every == 0:
-                print(f'epoch: {epoch:2d}, '
-                      f'loss: {self.cross_entropy(X, Y):.2f}, '
-                      f'acc: {self.metric(self.predict(X), y):.2f}')
+            if self.verbose and (epoch % 10 == 0 or epoch == self.n_epochs - 1):
+                print(
+                    f'epoch {epoch:2d} - '
+                    f'loss: {self.cross_entropy(X, Y):.2f}, '
+                    f'metric: {self.metric(y, self.predict(X)):.2f}' if type(self.metric) is not None else ''
+                )
 
     def predict(self, X):
-        """
-        Predicts a class using previously trained parameters.
-        
-        :param X: an ndarray with the shape (n, m), where n is the number of features and m is the number of samples
-        :return: an ndarray with the shape (1, m)
-        """
         Z = self.W @ X + self.b
-        pred = np.argmax(Z, axis=0, keepdims=True)
-        return pred
+        return np.argmax(Z, axis=0)
 
     def cross_entropy(self, X, Y):
         Z = self.W @ X + self.b
         A = np.maximum(softmax(Z), EPS)
-        ce = - np.sum(Y * np.log(A)) / X.shape[-1]
-        return ce
+        return - np.sum(Y * np.log(A)) / X.shape[-1]

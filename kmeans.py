@@ -2,44 +2,45 @@ import numpy as np
 
 
 class KMeans:
-    def __init__(self, K, metric=None):
+    def __init__(self, K, n_epochs=None, unsupervised_learning=True, verbose=False, metric=None):
         self.centroids = None
         self.K = K
+        self.n_epochs = n_epochs
+        self.unsupervised_learning = unsupervised_learning
+        self.verbose = verbose
         self.metric = metric
         self.rng = np.random.default_rng()
 
-    def fit(self, X, n_epochs, y=None, supervised_learning=False, print_info=True):
+    def fit(self, X, y=None):
         n, m = X.shape
         x_c = np.zeros(m) if y is None else np.squeeze(y)
 
-        if y is None or not supervised_learning:
+        if self.unsupervised_learning:
             self.centroids = self.rng.choice(X, size=self.K, axis=1, replace=False)
 
-            for epoch in range(n_epochs):
-                if print_info:
+            for epoch in range(self.n_epochs):
+                if self.verbose:
                     print(f'epoch {epoch:2d} - '
-                          f'loss: {self.__distance_loss(X, x_c):.2f}, '
-                          f'metric: {self.metric(self.predict(X), y):5.2f}, '
+                          f'loss: {self.__distance_loss(X, x_c):.3f}, '
+                          f'metric: {self.metric(y, self.predict(X)):5.2f}, '
                           f'distribution: {self.__centroid_distribution(X)}')
 
-                x_c = self.__find_nearest_centroids(X)
+                x_c = self.predict(X)
 
                 for k in range(self.K):
                     self.centroids[:, k] = np.average(X[:, x_c == k], axis=1)
         else:
+            assert y is not None, "Labels were not given, supervised learning isn't possible"
             self.centroids = np.zeros((n, self.K))
 
             for k in range(self.K):
                 self.centroids[:, k] = np.average(X[:, x_c == k], axis=1)
 
-            if print_info:
-                print(f'after fitting centroids: loss {self.__distance_loss(X, x_c):.2f}'
-                      f', metric {self.metric(self.predict(X), y):.2f}')
+            if self.verbose:
+                print(f'loss: {self.__distance_loss(X, x_c):.2f}, '
+                      f'metric: {self.metric(y, self.predict(X)):.2f}')
 
     def predict(self, X):
-        return self.__find_nearest_centroids(X).reshape(1, -1)
-
-    def __find_nearest_centroids(self, X):
         difference_tensor = np.expand_dims(X, 2) - np.expand_dims(self.centroids, 1)
         norms = np.linalg.norm(difference_tensor, axis=0)
         return np.argmin(norms, axis=1)
@@ -55,4 +56,4 @@ class KMeans:
         return summa / X.shape[1]
 
     def __centroid_distribution(self, X):
-        return np.unique(self.__find_nearest_centroids(X), return_counts=True)[1]
+        return np.unique(self.predict(X), return_counts=True)[1]
