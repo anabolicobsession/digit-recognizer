@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 
 
@@ -6,13 +8,15 @@ def add_bias_ones(X):
 
 
 class SVM:
-    def __init__(self, C, learning_rate, n_epochs, beta=0.9, verbose=False):
+    def __init__(self, C, learning_rate, n_epochs, mini_batch_size=64, beta=0.9, verbose=False):
         self.W = None
         self.C = C
         self.learning_rate = learning_rate
         self.n_epochs = n_epochs
+        self.mini_batch_size = mini_batch_size
         self.beta = beta
         self.verbose = verbose
+        self.rng = np.random.default_rng(0)
 
     def fit(self, X, y):
         X_b = add_bias_ones(X)
@@ -39,12 +43,23 @@ class SVM:
         return np.argmax(np.sum(np.tensordot(self.W, add_bias_ones(X), 1), axis=1), axis=0)
 
     def __construct_hyperplane(self, X, y):
-        w = np.zeros(X.shape[0])
+        n, m = X.shape
+        w = np.zeros(n)
         v_dw = 0
+        n_mini_batches = math.ceil(m / self.mini_batch_size)
 
         for i in range(self.n_epochs):
-            dw = w - self.C * (y * X) @ (1 - y * (w @ X) > 0)
-            v_dw = (self.beta * v_dw + (1 - self.beta) * dw)
-            w -= self.learning_rate * v_dw
+            perm = self.rng.permutation(m)
+            X_shuffled, y_shuffled = X[:, perm], y[perm]
+
+            for mini_batch in range(n_mini_batches):
+                start = mini_batch * self.mini_batch_size
+                end = min(start + mini_batch, m)
+                X_mb = X_shuffled[:, start:end]
+                y_mb = y_shuffled[start:end]
+
+                dw = w - self.C * (y_mb * X_mb) @ (1 - y_mb * (w @ X_mb) > 0)
+                v_dw = (self.beta * v_dw + (1 - self.beta) * dw)
+                w -= self.learning_rate * v_dw
 
         return w
