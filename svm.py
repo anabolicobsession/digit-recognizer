@@ -29,9 +29,12 @@ class SVM:
 
         for i in range(self.W.shape[0]):
             for j in range(self.W.shape[1]):
-                opp_class = j if i < j else j + 1
-                indexes = np.logical_or(y == i, y == opp_class)
-                self.W[i, j] = self.__construct_hyperplane(X_b[:, indexes], to_ones(y[indexes], i))
+                if j >= i:
+                    opp_class = j + 1
+                    indexes = np.logical_or(y == i, y == opp_class)
+                    self.W[i, j] = self.__construct_hyperplane(X_b[:, indexes], to_ones(y[indexes], i))
+                else:
+                    self.W[i, j] = - self.W[j, i - 1]
 
                 if self.verbose:
                     print(f'{(i * self.W.shape[1] + j + 1):2d}/{self.W.shape[0] * self.W.shape[1]} '
