@@ -1,30 +1,24 @@
 import numpy as np
 
-from preprocessing import make_one_hot
-
 
 def add_bias_ones(X):
     return np.vstack([X, np.ones(X.shape[1])])
 
 
 class SVM:
-    def __init__(self, C, verbose=False):
+    def __init__(self, C, learning_rate, n_epochs, verbose=False):
         self.W = None
-        self.n = None
-
         self.C = C
+        self.learning_rate = learning_rate
+        self.n_epochs = n_epochs
         self.verbose = verbose
-
-        self.learning_rate = 0.01
-        self.n_epochs = 10
 
     def fit(self, X, y):
         X_b = add_bias_ones(X)
-        Y = make_one_hot(y)
-        self.n = X_b.shape[0]
-        n_classes = Y.shape[0]
+        n_features = X_b.shape[0]
+        n_classes = len(np.unique(y))
 
-        self.W = np.zeros((n_classes, n_classes - 1, self.n))
+        self.W = np.zeros((n_classes, n_classes - 1, n_features))
         to_ones = np.vectorize(lambda x, y: 1 if x == y else -1)
 
         for i in range(self.W.shape[0]):
@@ -44,7 +38,7 @@ class SVM:
         return np.argmax(np.sum(np.tensordot(self.W, add_bias_ones(X), 1), axis=1), axis=0)
 
     def __construct_hyperplane(self, X, y):
-        w = np.zeros(self.n)
+        w = np.zeros(X.shape[0])
 
         for i in range(self.n_epochs):
             dw = w - self.C * (y * X) @ (1 - y * (w @ X) > 0)

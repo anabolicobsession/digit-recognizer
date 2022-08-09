@@ -11,7 +11,7 @@ if __name__ == '__main__':
     logistic_regression = LogisticRegression(n_classes=10, learning_rate=0.0005, n_epochs=30, verbose=True, metric=accuracy)
     kmeans = KMeans(K=10, unsupervised_learning=False, verbose=True, metric=accuracy)
     knn = KNN(K=3, verbose=True, metric=accuracy)
-    svm = SVM(C=1, verbose=True)
+    svm = SVM(C=1, learning_rate=0.01, n_epochs=10, verbose=True)
 
     model = svm
     do_analysis = True
