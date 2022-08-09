@@ -5,13 +5,15 @@ from logistic_regression import LogisticRegression
 from kmeans import KMeans
 from knn import KNN
 from metrics import accuracy
-
+from svm import SVM
 
 if __name__ == '__main__':
-    model = LogisticRegression(n_classes=10, learning_rate=0.0005, n_epochs=30, verbose=True, metric=accuracy)
-    # model = KMeans(K=10, unsupervised_learning=False, verbose=True, metric=accuracy)
-    # model = KNN(K=1, verbose=True, metric=accuracy)
+    logistic_regression = LogisticRegression(n_classes=10, learning_rate=0.0005, n_epochs=30, verbose=True, metric=accuracy)
+    kmeans = KMeans(K=10, unsupervised_learning=False, verbose=True, metric=accuracy)
+    knn = KNN(K=3, verbose=True, metric=accuracy)
+    svm = SVM(C=1, verbose=True)
 
+    model = svm
     do_analysis = True
     print_test_accuracy = True
     learning_rate = 0.001
