@@ -6,11 +6,12 @@ def add_bias_ones(X):
 
 
 class SVM:
-    def __init__(self, C, learning_rate, n_epochs, verbose=False):
+    def __init__(self, C, learning_rate, n_epochs, beta=0.9, verbose=False):
         self.W = None
         self.C = C
         self.learning_rate = learning_rate
         self.n_epochs = n_epochs
+        self.beta = beta
         self.verbose = verbose
 
     def fit(self, X, y):
@@ -39,9 +40,11 @@ class SVM:
 
     def __construct_hyperplane(self, X, y):
         w = np.zeros(X.shape[0])
+        v_dw = 0
 
         for i in range(self.n_epochs):
             dw = w - self.C * (y * X) @ (1 - y * (w @ X) > 0)
-            w -= self.learning_rate * dw
+            v_dw = (self.beta * v_dw + (1 - self.beta) * dw)
+            w -= self.learning_rate * v_dw
 
         return w
