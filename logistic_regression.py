@@ -4,7 +4,8 @@ import numpy as np
 
 from activations import softmax
 from constants import EPS
-from preprocessing import make_one_hot
+from loss_functions import cross_entropy
+from preprocessing import make_one_hot, add_bias_ones
 
 
 class LogisticRegression:
@@ -19,7 +20,6 @@ class LogisticRegression:
             metric=None
     ):
         self.W = None
-        self.b = None
         self.C = None
         self.rng = np.random.default_rng(0)
 
@@ -32,19 +32,19 @@ class LogisticRegression:
         self.metric = metric
 
     def fit(self, X, y):
-        n, m = X.shape
+        X_b = add_bias_ones(X)
+        n, m = X_b.shape
         self.C = len(np.unique(y))
         self.W = np.zeros((self.C, n))
-        self.b = np.zeros((self.C, 1))
         Y = make_one_hot(y)
 
         n_mini_batches = math.ceil(m / self.mini_batch_size)
-        v_dW, v_db = 0, 0
-        s_dW, s_db = 0, 0
+        v_dW = 0
+        s_dW = 0
 
         for i in range(self.n_epochs):
             perm = self.rng.permutation(m)
-            X_shuffled = X[:, perm]
+            X_shuffled = X_b[:, perm]
             Y_shuffled = Y[:, perm]
 
             for j in range(n_mini_batches):
@@ -57,27 +57,22 @@ class LogisticRegression:
                 dW, db = self.__backward_propagation(X_mb, Y_mb, A)
 
                 v_dW = self.beta1 * v_dW + (1 - self.beta1) * dW
-                v_db = self.beta1 * v_db + (1 - self.beta1) * db
-
-                s_dW = self.beta2 * s_dW + (1 - self.beta2) * np.power(dW, 2)
-                s_db = self.beta2 * s_db + (1 - self.beta2) * np.power(db, 2)
+                s_dW = self.beta2 * s_dW + (1 - self.beta2) * np.square(dW)
 
                 self.W -= self.learning_rate * v_dW / (np.sqrt(s_dW) + EPS)
-                self.b -= self.learning_rate * v_db / (np.sqrt(s_db) + EPS)
 
             if self.verbose:
                 print(
                     f'epoch {i:2d} - '
-                    f'loss: {self.__cross_entropy(X, Y):.2f}, '
+                    f'loss: {cross_entropy(Y, self.__forward_propagation(X_b)):.2f}, '
                     f'metric: {self.metric(y, self.predict(X)):.2f}' if type(self.metric) is not None else ''
                 )
 
     def predict(self, X):
-        Z = self.W @ X + self.b
-        return np.argmax(Z, axis=0)
+        return np.argmax(self.W @ add_bias_ones(X), axis=0)
 
     def __forward_propagation(self, X):
-        return softmax(self.W @ X + self.b)
+        return softmax(self.W @ X)
 
     def __backward_propagation(self, X, Y, A):
         dA = - Y / (A * self.mini_batch_size)
@@ -93,6 +88,3 @@ class LogisticRegression:
         db = np.sum(dZ, axis=1, keepdims=True)
 
         return dW, db
-
-    def __cross_entropy(self, X, Y):
-        return - np.sum(Y * np.log(self.__forward_propagation(X))) / X.shape[1]
