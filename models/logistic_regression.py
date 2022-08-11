@@ -2,10 +2,10 @@ import math
 
 import numpy as np
 
-from preprocessing import add_bias_ones, make_one_hot
-from activation_functions import softmax, d_softmax
-from loss_functions import cross_entropy, d_cross_entropy
-from constants import EPS
+from utils.preprocessing import add_bias_ones, make_one_hot
+from functions.activation_functions import softmax, d_softmax
+from functions.loss_functions import cross_entropy, d_cross_entropy
+from utils.constants import EPS
 
 
 class LogisticRegression:
