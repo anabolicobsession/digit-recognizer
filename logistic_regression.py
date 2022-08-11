@@ -1,14 +1,10 @@
 import math
 
 import numpy as np
+
+from activations import softmax
 from constants import EPS
 from preprocessing import make_one_hot
-
-
-def softmax(Z):
-    E = np.exp(Z - np.max(Z, axis=0))
-    A = E / np.sum(E, axis=0)
-    return A
 
 
 class LogisticRegression:
@@ -32,45 +28,33 @@ class LogisticRegression:
         self.mini_batch_size = mini_batch_size
         self.beta1 = beta1
         self.beta2 = beta2
-
         self.verbose = verbose
         self.metric = metric
 
     def fit(self, X, y):
         n, m = X.shape
+        self.C = len(np.unique(y))
         self.W = np.zeros((self.C, n))
         self.b = np.zeros((self.C, 1))
         Y = make_one_hot(y)
-        self.C = len(np.unique(Y))
 
         n_mini_batches = math.ceil(m / self.mini_batch_size)
         v_dW, v_db = 0, 0
         s_dW, s_db = 0, 0
 
-        for epoch in range(self.n_epochs):
+        for i in range(self.n_epochs):
             perm = self.rng.permutation(m)
-            X_shuffled, Y_shuffled = X[:, perm], Y[:, perm]
+            X_shuffled = X[:, perm]
+            Y_shuffled = Y[:, perm]
 
-            for mini_batch in range(n_mini_batches):
-                start = mini_batch * self.mini_batch_size
+            for j in range(n_mini_batches):
+                start = j * self.mini_batch_size
                 end = min(start + self.mini_batch_size, m)
                 X_mb = X_shuffled[:, start:end]
                 Y_mb = Y_shuffled[:, start:end]
 
-                Z = self.W @ X_mb + self.b
-                A = softmax(Z)
-
-                dA = - Y_mb / (A * self.mini_batch_size)
-                dA_dZ = np.zeros((self.C, self.C, self.mini_batch_size))
-
-                for k in range(self.mini_batch_size):
-                    for i in range(self.C):
-                        for j in range(self.C):
-                            dA_dZ[i, j, k] = A[i, k] * (1 - A[i, k]) if i == j else - A[i, k] * A[j, k]
-                dZ = np.einsum('ij,ikj->kj', dA, dA_dZ)
-
-                dW = dZ @ X_mb.T
-                db = np.sum(dZ, axis=1, keepdims=True)
+                A = self.__forward_propagation(X_mb)
+                dW, db = self.__backward_propagation(X_mb, Y_mb, A)
 
                 v_dW = self.beta1 * v_dW + (1 - self.beta1) * dW
                 v_db = self.beta1 * v_db + (1 - self.beta1) * db
@@ -83,8 +67,8 @@ class LogisticRegression:
 
             if self.verbose:
                 print(
-                    f'epoch {epoch:2d} - '
-                    f'loss: {self.cross_entropy(X, Y):.2f}, '
+                    f'epoch {i:2d} - '
+                    f'loss: {self.__cross_entropy(X, Y):.2f}, '
                     f'metric: {self.metric(y, self.predict(X)):.2f}' if type(self.metric) is not None else ''
                 )
 
@@ -92,7 +76,23 @@ class LogisticRegression:
         Z = self.W @ X + self.b
         return np.argmax(Z, axis=0)
 
-    def cross_entropy(self, X, Y):
-        Z = self.W @ X + self.b
-        A = np.maximum(softmax(Z), EPS)
-        return - np.sum(Y * np.log(A)) / X.shape[-1]
+    def __forward_propagation(self, X):
+        return softmax(self.W @ X + self.b)
+
+    def __backward_propagation(self, X, Y, A):
+        dA = - Y / (A * self.mini_batch_size)
+        dA_dZ = np.zeros((self.C, self.C, self.mini_batch_size))
+
+        for k in range(self.mini_batch_size):
+            for i in range(self.C):
+                for j in range(self.C):
+                    dA_dZ[i, j, k] = A[i, k] * (1 - A[i, k]) if i == j else - A[i, k] * A[j, k]
+        dZ = np.einsum('ij,ikj->kj', dA, dA_dZ)
+
+        dW = dZ @ X.T
+        db = np.sum(dZ, axis=1, keepdims=True)
+
+        return dW, db
+
+    def __cross_entropy(self, X, Y):
+        return - np.sum(Y * np.log(self.__forward_propagation(X))) / X.shape[1]
