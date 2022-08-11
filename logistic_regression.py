@@ -54,7 +54,7 @@ class LogisticRegression:
 
             for mini_batch in range(n_mini_batches):
                 start = mini_batch * self.mini_batch_size
-                end = min(start + mini_batch, m)
+                end = min(start + self.mini_batch_size, m)
                 X_mb = X_shuffled[:, start:end]
                 Y_mb = Y_shuffled[:, start:end]
 
