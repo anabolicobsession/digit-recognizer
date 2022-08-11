@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from utils import add_bias_ones
+from preprocessing import add_bias_ones
 
 
 class SVM:

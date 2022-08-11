@@ -1,6 +1,10 @@
 import numpy as np
 
 
+def add_bias_ones(X):
+    return np.vstack([X, np.ones(X.shape[1])])
+
+
 def make_one_hot(x):
     unique = np.unique(x)
     n, m = len(unique), len(x)
