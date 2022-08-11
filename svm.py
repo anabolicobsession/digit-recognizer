@@ -2,9 +2,7 @@ import math
 
 import numpy as np
 
-
-def add_bias_ones(X):
-    return np.vstack([X, np.ones(X.shape[1])])
+from utils import add_bias_ones
 
 
 class SVM:
