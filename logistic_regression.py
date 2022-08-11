@@ -54,7 +54,7 @@ class LogisticRegression:
                 Y_mb = Y_shuffled[:, start:end]
 
                 A = self.__forward_propagation(X_mb)
-                dW, db = self.__backward_propagation(X_mb, Y_mb, A)
+                dW = self.__backward_propagation(X_mb, Y_mb, A)
 
                 v_dW = self.beta1 * v_dW + (1 - self.beta1) * dW
                 s_dW = self.beta2 * s_dW + (1 - self.beta2) * np.square(dW)
@@ -75,16 +75,14 @@ class LogisticRegression:
         return softmax(self.W @ X)
 
     def __backward_propagation(self, X, Y, A):
-        dA = - Y / (A * self.mini_batch_size)
-        dA_dZ = np.zeros((self.C, self.C, self.mini_batch_size))
+        m = Y.shape[1]
+        dA = - Y / (A * m)
 
-        for k in range(self.mini_batch_size):
-            for i in range(self.C):
-                for j in range(self.C):
-                    dA_dZ[i, j, k] = A[i, k] * (1 - A[i, k]) if i == j else - A[i, k] * A[j, k]
+        dA_dZ = - np.expand_dims(A, 1) * np.expand_dims(A, 0)
+        diagonal = A * (1 - A)
+
+        for i in range(m):
+            np.fill_diagonal(dA_dZ[:, :, i], diagonal[:, i])
+
         dZ = np.einsum('ij,ikj->kj', dA, dA_dZ)
-
-        dW = dZ @ X.T
-        db = np.sum(dZ, axis=1, keepdims=True)
-
-        return dW, db
+        return dZ @ X.T
