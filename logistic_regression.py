@@ -2,10 +2,10 @@ import math
 
 import numpy as np
 
-from activations import softmax
+from preprocessing import add_bias_ones, make_one_hot
+from activation_functions import softmax, d_softmax
+from loss_functions import cross_entropy, d_cross_entropy
 from constants import EPS
-from loss_functions import cross_entropy
-from preprocessing import make_one_hot, add_bias_ones
 
 
 class LogisticRegression:
@@ -59,7 +59,7 @@ class LogisticRegression:
                 v_dW = self.beta1 * v_dW + (1 - self.beta1) * dW
                 s_dW = self.beta2 * s_dW + (1 - self.beta2) * np.square(dW)
 
-                self.W -= self.learning_rate * v_dW / (np.sqrt(s_dW) + EPS)
+                self.W -= self.learning_rate * v_dW / (np.maximum(np.sqrt(s_dW), EPS))
 
             if self.verbose:
                 print(
@@ -75,14 +75,4 @@ class LogisticRegression:
         return softmax(self.W @ X)
 
     def __backward_propagation(self, X, Y, A):
-        m = Y.shape[1]
-        dA = - Y / (A * m)
-
-        dA_dZ = - np.expand_dims(A, 1) * np.expand_dims(A, 0)
-        diagonal = A * (1 - A)
-
-        for i in range(m):
-            np.fill_diagonal(dA_dZ[:, :, i], diagonal[:, i])
-
-        dZ = np.einsum('ij,ikj->kj', dA, dA_dZ)
-        return dZ @ X.T
+        return np.einsum('ij,ikj->kj', d_cross_entropy(Y, A), d_softmax(A)) @ X.T
