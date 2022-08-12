@@ -3,8 +3,8 @@ import math
 import numpy as np
 
 from utils.preprocessing import add_bias_ones, make_one_hot
-from functions.activation_functions import softmax, d_softmax
-from functions.loss_functions import cross_entropy, d_cross_entropy
+from functions.activation_functions import softmax
+from functions.loss_functions import cross_entropy
 from utils.constants import EPS
 
 
@@ -75,4 +75,4 @@ class LogisticRegression:
         return softmax(self.W @ X)
 
     def __backward_propagation(self, X, Y, A):
-        return np.einsum('ij,ikj->kj', d_cross_entropy(Y, A), d_softmax(A)) @ X.T
+        return (A - Y) @ X.T / X.shape[1]
