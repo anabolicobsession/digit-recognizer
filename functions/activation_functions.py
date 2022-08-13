@@ -7,22 +7,30 @@ def softmax(Z):
     return A
 
 
-def d_softmax(A, dA=None):
-    if dA is None:
-        dZ = - np.expand_dims(A, 1) * np.expand_dims(A, 0)
-        diagonal = A * (1 - A)
-
-        for i in range(A.shape[1]):
-            np.fill_diagonal(dZ[:, :, i], diagonal[:, i])
-    else:
-        dZ = A * (dA - np.sum(dA * A, axis=0, keepdims=True))
-
-    return dZ
+def d_softmax(dA, A):
+    return A * (dA - np.sum(dA * A, axis=0, keepdims=True))
 
 
 def relu(Z):
     return np.maximum(Z, 0)
 
 
-def d_relu(A, dA=None):
+def d_relu(dA, A):
     return (A > 0).astype(float) if dA is None else dA * (A > 0).astype(float)
+
+
+def sigmoid(Z):
+    return 1 / (1 + np.exp(-Z))
+
+
+def d_sigmoid(dA, A):
+    return dA * A * (1 - A)
+
+
+def tanh(Z):
+    E, E_m = np.exp(Z), np.exp(-Z)
+    return (E - E_m) / (E + E_m)
+
+
+def d_tanh(dA, A):
+    return dA * (1 - np.square(A))
