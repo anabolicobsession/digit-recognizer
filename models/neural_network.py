@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from functions.activation_functions import relu, softmax, d_relu
+from functions.activation_functions import relu, softmax, d_relu, d_softmax
 from functions.loss_functions import cross_entropy
 from utils.constants import EPS
 from utils.preprocessing import make_one_hot, add_bias_ones
@@ -88,18 +88,19 @@ class NeuralNetwork:
         return A
 
     def __backward_propagation(self, A, Y):
+        m = Y.shape[1]
         dW = self.n_layers * [np.array([])]
-        dA_prev = None
+        dA = - Y / (A[-1] * m)
 
         for i in reversed(range(1, self.n_layers)):
             if i == self.n_layers - 1:
-                dZ = (A[i] - Y) / Y.shape[1]
+                dZ = d_softmax(A[i], dA)
                 dW[i] = dZ @ add_bias_ones(A[i - 1]).T
-                dA_prev = self.W[i][:, :-1].T @ dZ
+                dA = self.W[i][:, :-1].T @ dZ
             else:
-                dW[i] = (dA_prev * d_relu(A[i])) @ add_bias_ones(A[i - 1]).T
+                dW[i] = d_relu(A[i], dA) @ add_bias_ones(A[i - 1]).T
                 if i > 1:
                     dA_dA_prev = np.einsum('ij,ik->ikj', self.W[i][:, :-1], A[i])
-                    dA_prev = np.einsum('ij,ijk->kj', dA_prev, dA_dA_prev)
+                    dA = np.einsum('ij,ijk->kj', dA, dA_dA_prev)
 
         return dW
