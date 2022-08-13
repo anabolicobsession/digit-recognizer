@@ -15,3 +15,14 @@ def d_softmax(A):
         np.fill_diagonal(ds[:, :, i], diagonal[:, i])
 
     return ds
+
+
+def relu(Z):
+    return Z * (Z > 0)
+
+
+def d_relu(A):
+    dZ = np.copy(A)
+    dZ[A > 0] = 1
+    return dZ
+
