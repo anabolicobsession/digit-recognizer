@@ -2,16 +2,18 @@ import math
 
 import numpy as np
 
-from functions.activation_functions import relu, softmax, d_relu, d_softmax
-from functions.loss_functions import cross_entropy
-from utils.constants import EPS
 from utils.preprocessing import make_one_hot, add_bias_ones
+from utils.constants import EPS
 
 
 class NeuralNetwork:
     def __init__(
             self,
             hidden_layers,
+            activations,
+            derivatives,
+            loss,
+            d_loss,
             learning_rate,
             n_epochs,
             mini_batch_size=32,
@@ -22,10 +24,13 @@ class NeuralNetwork:
     ):
         self.W = [np.array([])]
         self.n_layers = len(hidden_layers) + 2
-        self.activations = [lambda x: x] + len(hidden_layers) * [relu] + [softmax]
         self.rng = np.random.default_rng(0)
 
         self.layers = hidden_layers
+        self.activations = [lambda x: x] + activations
+        self.derivatives = [lambda x: x] + derivatives
+        self.loss = loss
+        self.d_loss = d_loss
         self.learning_rate = learning_rate
         self.n_epochs = n_epochs
         self.mini_batch_size = mini_batch_size
@@ -67,7 +72,7 @@ class NeuralNetwork:
             if self.verbose:
                 print(
                     f'epoch {epoch:2d} - '
-                    f'loss: {cross_entropy(Y, np.maximum(self.__forward_propagation(X)[-1], EPS)):.2f}, '
+                    f'loss: {self.loss(Y, self.__forward_propagation(X)[-1]):.2f}, '
                     f'metric: {self.metric(y, self.predict(X)):.2f}' if type(self.metric) is not None else ''
                 )
 
@@ -88,19 +93,12 @@ class NeuralNetwork:
         return A
 
     def __backward_propagation(self, A, Y):
-        m = Y.shape[1]
         dW = self.n_layers * [np.array([])]
-        dA = - Y / (A[-1] * m)
+        dA = self.d_loss(Y, A[-1])
 
         for i in reversed(range(1, self.n_layers)):
-            if i == self.n_layers - 1:
-                dZ = d_softmax(A[i], dA)
-                dW[i] = dZ @ add_bias_ones(A[i - 1]).T
-                dA = self.W[i][:, :-1].T @ dZ
-            else:
-                dW[i] = d_relu(A[i], dA) @ add_bias_ones(A[i - 1]).T
-                if i > 1:
-                    dA_dA_prev = np.einsum('ij,ik->ikj', self.W[i][:, :-1], A[i])
-                    dA = np.einsum('ij,ijk->kj', dA, dA_dA_prev)
+            dZ = self.derivatives[i](dA, A[i])
+            dW[i] = dZ @ add_bias_ones(A[i - 1]).T
+            if i > 1: dA = self.W[i].T[:-1] @ dZ
 
         return dW

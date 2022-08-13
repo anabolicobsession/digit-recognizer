@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 
+from functions.activation_functions import softmax, relu, d_relu, d_softmax
+from functions.loss_functions import cross_entropy, d_cross_entropy
 from functions.metrics import accuracy
 from models.kmeans import KMeans
 from models.knn import KNN
@@ -15,6 +17,10 @@ if __name__ == '__main__':
     svm = SVM(C=1, learning_rate=0.001, n_epochs=15, verbose=True)
     neural_network = NeuralNetwork(
         hidden_layers=[100],
+        activations=[relu, softmax],
+        derivatives=[d_relu, d_softmax],
+        loss=cross_entropy,
+        d_loss=d_cross_entropy,
         learning_rate=0.001,
         n_epochs=5,
         verbose=True,
