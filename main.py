@@ -1,19 +1,27 @@
 import numpy as np
 import pandas as pd
 
-from metrics import accuracy
-from logistic_regression import LogisticRegression
-from kmeans import KMeans
-from knn import KNN
-from svm import SVM
+from functions.metrics import accuracy
+from models.kmeans import KMeans
+from models.knn import KNN
+from models.logistic_regression import LogisticRegression
+from models.neural_network import NeuralNetwork
+from models.svm import SVM
 
 if __name__ == '__main__':
     logistic_regression = LogisticRegression(learning_rate=0.001, n_epochs=10, verbose=True, metric=accuracy)
     kmeans = KMeans(K=10, unsupervised_learning=False, verbose=True, metric=accuracy)
     knn = KNN(K=3, verbose=True)
     svm = SVM(C=1, learning_rate=0.001, n_epochs=15, verbose=True)
+    neural_network = NeuralNetwork(
+        hidden_layers=[100],
+        learning_rate=0.001,
+        n_epochs=5,
+        verbose=True,
+        metric=accuracy
+    )
 
-    model = logistic_regression
+    model = neural_network
     do_analysis = True
     print_test_accuracy = False
     train_set_share = 0.8
