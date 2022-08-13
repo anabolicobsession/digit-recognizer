@@ -17,7 +17,6 @@ class NeuralNetwork:
             mini_batch_size=32,
             beta1=0.9,
             beta2=0.999,
-            eps=1e-3,
             verbose=False,
             metric=None
     ):
@@ -32,7 +31,6 @@ class NeuralNetwork:
         self.mini_batch_size = mini_batch_size
         self.beta1 = beta1
         self.beta2 = beta2
-        self.eps = eps
         self.verbose = verbose
         self.metric = metric
 
@@ -42,7 +40,9 @@ class NeuralNetwork:
         self.layers = np.concatenate(([X.shape[0]], np.array(self.layers, dtype=int), [Y.shape[0]]))
 
         for i in range(1, self.n_layers):
-            self.W.append(self.eps * self.rng.random((self.layers[i], self.layers[i - 1] + 1)))  # + 1 for a bias
+            dev = np.sqrt(2 / self.layers[i - 1])
+            shape = self.layers[i], self.layers[i - 1] + 1  # + 1 for a bias
+            self.W.append(self.rng.normal(0., dev, shape))
 
         n_mini_batches = math.ceil(m / self.mini_batch_size)
         v_dW, s_dW = self.n_layers * [0], self.n_layers * [0]
