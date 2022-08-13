@@ -18,11 +18,9 @@ def d_softmax(A):
 
 
 def relu(Z):
-    return Z * (Z > 0)
+    return np.maximum(Z, 0)
 
 
 def d_relu(A):
-    dZ = np.copy(A)
-    dZ[A > 0] = 1
-    return dZ
+    return (A > 0).astype(float)
 
