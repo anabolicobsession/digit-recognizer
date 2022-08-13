@@ -98,7 +98,8 @@ class NeuralNetwork:
                 dA_prev = self.W[i][:, :-1].T @ dZ
             else:
                 dW[i] = (dA_prev * d_relu(A[i])) @ add_bias_ones(A[i - 1]).T
-                dA_dA_prev = np.einsum('ij,ik->ikj', self.W[i][:, :-1], A[i])
-                dA_prev = np.einsum('ij,ijk->kj', dA_prev, dA_dA_prev)
+                if i > 1:
+                    dA_dA_prev = np.einsum('ij,ik->ikj', self.W[i][:, :-1], A[i])
+                    dA_prev = np.einsum('ij,ijk->kj', dA_prev, dA_dA_prev)
 
         return dW
