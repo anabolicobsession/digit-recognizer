@@ -1,5 +1,12 @@
 import numpy as np
 
+from utils.constants import EPS
+
+
+def exclude_zero(X):
+    X[X == 0] = EPS
+    return X
+
 
 def add_bias_ones(X):
     return np.vstack([X, np.ones(X.shape[1])])
